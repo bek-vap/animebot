@@ -1,7 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 
-from database.db import get_channels
+from database.db import get_sub_channels as get_channels
 from middlewares.subscription import check_subscription, subscribe_keyboard
 from keyboards.main import main_menu
 
