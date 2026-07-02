@@ -5,6 +5,14 @@ from config import DB_PATH
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("""
+            CREATE TABLE IF NOT EXISTS channels (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                channel_id TEXT NOT NULL,
+                channel_name TEXT NOT NULL,
+                channel_link TEXT NOT NULL
+            )
+        """)
+        await db.execute("""
             CREATE TABLE IF NOT EXISTS admins (
                 user_id INTEGER PRIMARY KEY,
                 username TEXT,
@@ -285,6 +293,28 @@ async def is_favorite(user_id: int, anime_id: int) -> bool:
 
 
 # ─── ADMINS ──────────────────────────────────────────────────────────────────
+
+async def get_channels() -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM channels") as cursor:
+            return [dict(r) for r in await cursor.fetchall()]
+
+
+async def add_channel(channel_id: str, channel_name: str, channel_link: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO channels (channel_id, channel_name, channel_link) VALUES (?, ?, ?)",
+            (channel_id, channel_name, channel_link)
+        )
+        await db.commit()
+
+
+async def delete_channel(channel_id_db: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM channels WHERE id = ?", (channel_id_db,))
+        await db.commit()
+
 
 async def is_admin_in_db(user_id: int) -> bool:
     async with aiosqlite.connect(DB_PATH) as db:

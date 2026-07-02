@@ -12,17 +12,25 @@ from database.db import (
     count_animes, count_users, get_anime_by_code, get_anime_by_id,
     is_admin_in_db, add_admin, remove_admin, list_admins,
     add_episode, update_episode, delete_episode, get_episodes,
-    get_episode, count_episodes
+    get_episode, count_episodes,
+    get_channels, add_channel, delete_channel
 )
 from keyboards.main import (
     admin_menu, admin_anime_list, admin_anime_detail,
     admin_edit_fields, confirm_delete,
-    admin_episodes_list, admin_episode_detail, confirm_delete_ep
+    admin_episodes_list, admin_episode_detail, confirm_delete_ep,
+    channels_menu
 )
 import aiosqlite
 from database.db import DB_PATH
 
 router = Router()
+
+
+class AddChannel(StatesGroup):
+    channel_id = State()
+    channel_name = State()
+    channel_link = State()
 
 
 class PasswordState(StatesGroup):
@@ -526,3 +534,93 @@ async def admin_edit_field_save(message: Message, state: FSMContext):
     await update_anime(anime_id, {field: value})
     await state.clear()
     await message.answer(f"✅ <b>{field}</b> yangilandi!", parse_mode="HTML", reply_markup=admin_menu())
+
+
+# ─── CHANNEL MANAGEMENT ──────────────────────────────────────────────────────
+
+@router.callback_query(F.data == "admin:channels")
+async def admin_channels_handler(callback: CallbackQuery):
+    if not await check_admin(callback.from_user.id):
+        return
+    channels = await get_channels()
+    text = (
+        f"📢 <b>Majburiy obuna kanallari</b>\n\n"
+        f"Hozir: <b>{len(channels)}</b> ta kanal\n\n"
+        + (
+            "\n".join(f"• {ch['channel_name']} — {ch['channel_link']}" for ch in channels)
+            if channels else "Hali kanal qo'shilmagan."
+        )
+        + "\n\n🗑 O'chirish uchun kanal nomiga bosing:"
+    )
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=channels_menu(channels))
+
+
+@router.callback_query(F.data == "admin:addchannel")
+async def admin_add_channel_start(callback: CallbackQuery, state: FSMContext):
+    if not await check_admin(callback.from_user.id):
+        return
+    await state.set_state(AddChannel.channel_id)
+    await callback.message.answer(
+        "📢 <b>Kanal qo'shish</b>\n\n"
+        "Kanal ID sini kiriting.\n"
+        "Misol: <code>-1001234567890</code>\n\n"
+        "Kanal ID ni bilish uchun kanalga @username_to_id_bot ni qo'shing.",
+        parse_mode="HTML"
+    )
+
+
+@router.message(AddChannel.channel_id)
+async def add_channel_id(message: Message, state: FSMContext):
+    channel_id = message.text.strip()
+    # verify bot can access the channel
+    try:
+        chat = await message.bot.get_chat(channel_id)
+        await state.update_data(channel_id=channel_id, channel_name=chat.title)
+        await state.set_state(AddChannel.channel_link)
+        await message.answer(
+            f"✅ Kanal topildi: <b>{chat.title}</b>\n\n"
+            f"Endi kanal linkini kiriting (masalan: <code>https://t.me/kanalUsername</code>):",
+            parse_mode="HTML"
+        )
+    except Exception:
+        await message.answer(
+            "❌ Kanal topilmadi!\n\n"
+            "• Bot kanalga admin sifatida qo'shilganmi?\n"
+            "• ID to'g'ri kiritildimi?\n\n"
+            "Qayta kiriting:"
+        )
+
+
+@router.message(AddChannel.channel_link)
+async def add_channel_link(message: Message, state: FSMContext):
+    link = message.text.strip()
+    data = await state.get_data()
+    await state.clear()
+    await add_channel(data["channel_id"], data["channel_name"], link)
+    channels = await get_channels()
+    await message.answer(
+        f"✅ <b>{data['channel_name']}</b> kanali qo'shildi!\n"
+        f"Endi foydalanuvchilar obuna bo'lmasdan botdan foydalana olmaydi.",
+        parse_mode="HTML",
+        reply_markup=channels_menu(channels)
+    )
+
+
+@router.callback_query(F.data.startswith("admin:delchannel:"))
+async def admin_delete_channel(callback: CallbackQuery):
+    if not await check_admin(callback.from_user.id):
+        return
+    ch_id = int(callback.data.split(":")[2])
+    await delete_channel(ch_id)
+    channels = await get_channels()
+    text = (
+        f"📢 <b>Majburiy obuna kanallari</b>\n\n"
+        f"Hozir: <b>{len(channels)}</b> ta kanal\n\n"
+        + (
+            "\n".join(f"• {ch['channel_name']} — {ch['channel_link']}" for ch in channels)
+            if channels else "Hali kanal qo'shilmagan."
+        )
+        + "\n\n🗑 O'chirish uchun kanal nomiga bosing:"
+    )
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=channels_menu(channels))
+    await callback.answer("✅ Kanal o'chirildi")

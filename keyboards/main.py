@@ -88,7 +88,20 @@ def admin_menu() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(text="➕ Anime qo'shish", callback_data="admin:add"))
     builder.row(InlineKeyboardButton(text="📋 Animeler ro'yxati", callback_data="admin:list:0"))
+    builder.row(InlineKeyboardButton(text="📢 Kanallar boshqaruvi", callback_data="admin:channels"))
     builder.row(InlineKeyboardButton(text="📊 Statistika", callback_data="admin:stats"))
+    return builder.as_markup()
+
+
+def channels_menu(channels: list) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    for ch in channels:
+        builder.row(InlineKeyboardButton(
+            text=f"🗑 {ch['channel_name']}",
+            callback_data=f"admin:delchannel:{ch['id']}"
+        ))
+    builder.row(InlineKeyboardButton(text="➕ Kanal qo'shish", callback_data="admin:addchannel"))
+    builder.row(InlineKeyboardButton(text="🔙 Panel", callback_data="admin:back"))
     return builder.as_markup()
 
 
