@@ -56,6 +56,10 @@ async def deliver_anime(message: Message, anime: dict):
 
     # Forward video from source channel
     msg_id = anime.get("source_message_id", 0)
+    import logging
+    log = logging.getLogger(__name__)
+    log.info(f"[ANIME] code={anime['code']} source_message_id={msg_id} SOURCE_CHANNEL_ID={SOURCE_CHANNEL_ID!r}")
+
     if msg_id and SOURCE_CHANNEL_ID:
         try:
             await message.bot.forward_message(
@@ -63,13 +67,18 @@ async def deliver_anime(message: Message, anime: dict):
                 from_chat_id=SOURCE_CHANNEL_ID,
                 message_id=msg_id,
             )
-        except Exception:
+            log.info(f"[ANIME] forward OK: msg_id={msg_id} -> chat_id={message.chat.id}")
+        except Exception as e:
+            log.error(f"[ANIME] forward FAILED: {e}")
             await message.answer(
-                "⚠️ <b>Video yuborishda xato!</b>\n"
-                "Kanal sozlamalari yoki video o'chirilgan bo'lishi mumkin.",
+                f"⚠️ <b>Video yuborishda xato!</b>\n<code>{e}</code>",
                 parse_mode="HTML"
             )
+    elif not SOURCE_CHANNEL_ID:
+        log.warning("[ANIME] SOURCE_CHANNEL_ID is not set in .env")
+        await message.answer("⚠️ SOURCE_CHANNEL_ID sozlanmagan!", parse_mode="HTML")
     else:
+        log.warning(f"[ANIME] source_message_id=0 for code={anime['code']}")
         await message.answer(
             "⏳ <b>Video hali kanalga yuklanmagan.</b>\n"
             f"Kanalda <code>Anime codi: {anime['code']}</code> caption bilan post qo'shilgach avtomatik topiladi.",
