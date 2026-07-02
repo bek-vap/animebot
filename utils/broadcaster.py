@@ -64,14 +64,25 @@ def format_broadcast_caption(anime: dict) -> str:
     return "\n".join(lines)
 
 
-async def broadcast_anime(bot: Bot, anime: dict) -> dict:
+async def broadcast_anime(bot: Bot, anime: dict, bot_username: str) -> dict:
     """
     Send anime announcement to all broadcast channels.
+    Includes a 'Ko'rish' button that deep-links to the bot.
     Returns {success: int, failed: int}
     """
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
     channels = await get_broadcast_channels()
     caption = format_broadcast_caption(anime)
     success, failed = 0, 0
+
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(
+        text="▶️ Ko'rish",
+        url=f"https://t.me/{bot_username}?start={anime['code']}"
+    ))
+    kb = builder.as_markup()
 
     for ch in channels:
         try:
@@ -81,15 +92,17 @@ async def broadcast_anime(bot: Bot, anime: dict) -> dict:
                     photo=anime["thumbnail_file_id"],
                     caption=caption,
                     parse_mode="HTML",
+                    reply_markup=kb,
                 )
             else:
                 await bot.send_message(
                     chat_id=ch["channel_id"],
                     text=caption,
                     parse_mode="HTML",
+                    reply_markup=kb,
                 )
             success += 1
-        except Exception:
+        except Exception as e:
             failed += 1
 
     return {"success": success, "failed": failed}

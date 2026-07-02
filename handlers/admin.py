@@ -161,7 +161,8 @@ async def admin_rebroadcast(callback: CallbackQuery):
         return
     anime_id = int(callback.data.split(":")[2])
     anime = await get_anime_by_id(anime_id)
-    result = await broadcast_anime(callback.bot, anime)
+    bot_info = await callback.bot.get_me()
+    result = await broadcast_anime(callback.bot, anime, bot_info.username)
     await callback.answer(
         f"✅ Yuborildi: {result['success']} | ❌ Xato: {result['failed']}",
         show_alert=True
@@ -320,7 +321,8 @@ async def add_description(message: Message, state: FSMContext):
     # Broadcast to all channels
     bch = await get_broadcast_channels()
     if bch:
-        result = await broadcast_anime(message.bot, anime)
+        bot_info = await message.bot.get_me()
+        result = await broadcast_anime(message.bot, anime, bot_info.username)
         await message.answer(
             f"📣 <b>Broadcast:</b> {result['success']} kanalga yuborildi"
             + (f", {result['failed']} ta xato" if result['failed'] else ""),

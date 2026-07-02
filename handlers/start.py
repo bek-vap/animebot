@@ -1,8 +1,8 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, CommandObject
 
-from database.db import register_user
+from database.db import register_user, get_anime_by_code
 from keyboards.main import main_menu, cabinet_menu
 
 router = Router()
@@ -17,12 +17,21 @@ WELCOME_TEXT = (
 
 
 @router.message(CommandStart())
-async def start_handler(message: Message):
+async def start_handler(message: Message, command: CommandObject = None):
     await register_user(
         user_id=message.from_user.id,
         username=message.from_user.username or "",
         full_name=message.from_user.full_name or "",
     )
+    # Deep link: /start <anime_code>
+    if command and command.args:
+        code = command.args.strip()
+        anime = await get_anime_by_code(code)
+        if anime:
+            from handlers.anime import deliver_anime
+            await deliver_anime(message, anime)
+            return
+
     try:
         await message.answer_animation(
             animation=WELCOME_GIF,
