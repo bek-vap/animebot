@@ -66,7 +66,8 @@ async def deliver_anime(message: Message, anime: dict):
                 chat_id=message.chat.id,
                 from_chat_id=SOURCE_CHANNEL_ID,
                 message_id=msg_id,
-                caption="",  # caption o'chiriladi
+                caption=" ",
+                parse_mode=None,
             )
             log.info(f"[ANIME] copy OK: msg_id={msg_id} -> chat_id={message.chat.id}")
         except Exception as e:
