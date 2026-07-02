@@ -6,23 +6,17 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import BOT_TOKEN
 from database.db import init_db
-from handlers import start, anime, cabinet, admin
-from handlers import subscription
+from handlers import start, anime, cabinet, admin, subscription, channel
 from middlewares.subscription import SubscriptionMiddleware
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 
 async def main():
     await init_db()
-
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
 
-    # subscription check on all messages and callbacks
     dp.message.middleware(SubscriptionMiddleware())
     dp.callback_query.middleware(SubscriptionMiddleware())
 
@@ -30,6 +24,7 @@ async def main():
     dp.include_router(start.router)
     dp.include_router(cabinet.router)
     dp.include_router(admin.router)
+    dp.include_router(channel.router)
     dp.include_router(anime.router)
 
     logging.info("Bot ishga tushdi!")

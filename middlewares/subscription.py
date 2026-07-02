@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery, TelegramObject
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton
 
-from database.db import get_channels
+from database.db import get_sub_channels as get_channels
 from config import ADMIN_IDS
 from database.db import is_admin_in_db
 
