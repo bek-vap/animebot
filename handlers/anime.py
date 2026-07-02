@@ -62,12 +62,13 @@ async def deliver_anime(message: Message, anime: dict):
 
     if msg_id and SOURCE_CHANNEL_ID:
         try:
-            await message.bot.forward_message(
+            await message.bot.copy_message(
                 chat_id=message.chat.id,
                 from_chat_id=SOURCE_CHANNEL_ID,
                 message_id=msg_id,
+                caption="",  # caption o'chiriladi
             )
-            log.info(f"[ANIME] forward OK: msg_id={msg_id} -> chat_id={message.chat.id}")
+            log.info(f"[ANIME] copy OK: msg_id={msg_id} -> chat_id={message.chat.id}")
         except Exception as e:
             log.error(f"[ANIME] forward FAILED: {e}")
             await message.answer(
