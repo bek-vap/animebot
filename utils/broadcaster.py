@@ -58,7 +58,6 @@ def format_broadcast_caption(anime: dict) -> str:
     if anime.get("genres"):
         lines.append(f"├‣ Genres: {anime['genres']}")
     lines.append("╰──────────────────────")
-    lines.append(f"\n📌 Botdan yuklab olish uchun kodni yuboring: <code>{anime['code']}</code>")
     if anime.get("description"):
         lines.append(f"\n📄 {anime['description']}")
     return "\n".join(lines)
