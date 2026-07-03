@@ -8,6 +8,7 @@ from config import BOT_TOKEN
 from database.db import init_db
 from handlers import start, anime, cabinet, admin, subscription, channel
 from middlewares.subscription import SubscriptionMiddleware
+from middlewares.chat_type import PrivateChatOnlyMiddleware
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
@@ -17,6 +18,8 @@ async def main():
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher(storage=MemoryStorage())
 
+    dp.message.middleware(PrivateChatOnlyMiddleware())
+    dp.callback_query.middleware(PrivateChatOnlyMiddleware())
     dp.message.middleware(SubscriptionMiddleware())
     dp.callback_query.middleware(SubscriptionMiddleware())
 
